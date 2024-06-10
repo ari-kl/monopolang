@@ -1,0 +1,2 @@
+# monopolang
+langjam - economy language
