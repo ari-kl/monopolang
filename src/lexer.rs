@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
     // Grouping
     LeftParen,
@@ -26,13 +26,15 @@ pub enum TokenType {
     Identifier,
     String,
     Number,
-    Boolean,
+    True,
+    False,
 
     // Keywords
     And,
     Or,
     If,
     Else,
+    Then,
     End,
     While,
     For,
@@ -152,6 +154,7 @@ impl Lexer {
             "or" => TokenType::Or,
             "if" => TokenType::If,
             "else" => TokenType::Else,
+            "then" => TokenType::Then,
             "end" => TokenType::End,
             "while" => TokenType::While,
             "for" => TokenType::For,
@@ -161,8 +164,8 @@ impl Lexer {
             "return" => TokenType::Return,
             "let" => TokenType::Let,
             "print" => TokenType::Print,
-            "true" => TokenType::Boolean,
-            "false" => TokenType::Boolean,
+            "true" => TokenType::True,
+            "false" => TokenType::False,
             _ => TokenType::Identifier,
         };
 
