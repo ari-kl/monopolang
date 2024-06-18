@@ -34,6 +34,11 @@ impl Parser {
     }
 
     pub fn variable_declaration(&mut self) -> Declaration {
+        // If the next token is an at, it's a readonly variable and we should use a specialized error message
+        if self.check(TokenType::At) {
+            self.error("Cannot declare readonly variable");
+        }
+
         let name = self
             .consume(TokenType::Identifier, "Expected variable name")
             .lexeme;
@@ -48,6 +53,11 @@ impl Parser {
         match self.peek().kind {
             TokenType::Print => self.print_statement(),
             TokenType::If => self.if_statement(),
+            TokenType::Gamble => self.gamble_statement(),
+            TokenType::Buy => self.buy_statement(),
+            TokenType::Sell => self.sell_statement(),
+            TokenType::Loan => self.loan_statement(),
+            TokenType::Pay => self.pay_statement(),
             _ => Statement::Expression(self.expression()),
         }
     }
@@ -69,6 +79,43 @@ impl Parser {
         let then_branch = Box::new(Statement::Block(self.block()));
 
         Statement::If(condition, then_branch)
+    }
+
+    pub fn gamble_statement(&mut self) -> Statement {
+        self.advance();
+        let value = self.expression();
+
+        Statement::Gamble(value)
+    }
+
+    pub fn buy_statement(&mut self) -> Statement {
+        self.advance();
+        let stock = self.expression();
+        let amount = self.expression();
+
+        Statement::Buy(stock, amount)
+    }
+
+    pub fn sell_statement(&mut self) -> Statement {
+        self.advance();
+        let stock = self.expression();
+        let amount = self.expression();
+
+        Statement::Sell(stock, amount)
+    }
+
+    pub fn loan_statement(&mut self) -> Statement {
+        self.advance();
+        let amount = self.expression();
+
+        Statement::Loan(amount)
+    }
+
+    pub fn pay_statement(&mut self) -> Statement {
+        self.advance();
+        let amount = self.expression();
+
+        Statement::Pay(amount)
     }
 
     pub fn block(&mut self) -> Vec<Declaration> {
@@ -208,6 +255,11 @@ impl Parser {
             Expression::String(self.previous().lexeme.clone())
         } else if self.match_token(TokenType::Identifier) {
             Expression::Variable(self.previous().lexeme.clone())
+        } else if self.match_token(TokenType::At) {
+            let name = self
+                .consume(TokenType::Identifier, "Expected identifier after '@'")
+                .lexeme;
+            Expression::ReadonlyVariable(name)
         } else if self.match_token(TokenType::LeftParen) {
             let expr = self.expression();
             self.consume(TokenType::RightParen, "Expected ')' after expression");

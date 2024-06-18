@@ -45,7 +45,15 @@ pub enum TokenType {
     Let,
     Print,
 
+    // Economy keywords
+    Gamble,
+    Buy,
+    Sell,
+    Loan,
+    Pay,
+
     // Special
+    At,
     Eof,
 }
 
@@ -107,10 +115,19 @@ impl Lexer {
             ')' => self.add_token(TokenType::RightParen),
             '[' => self.add_token(TokenType::LeftBracket),
             ']' => self.add_token(TokenType::RightBracket),
+            '@' => self.add_token(TokenType::At),
             '+' => self.add_token(TokenType::Plus),
             '-' => self.add_token(TokenType::Minus),
             '*' => self.add_token(TokenType::Star),
-            '/' => self.add_token(TokenType::Slash),
+            '/' => {
+                if self.match_char('/') {
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash);
+                }
+            }
             '!' => {
                 if self.match_char('=') {
                     self.add_token(TokenType::BangEqual)
@@ -148,7 +165,7 @@ impl Lexer {
     }
 
     fn identifier(&mut self) {
-        while self.is_alpha() {
+        while self.is_identifier() {
             self.advance();
         }
 
@@ -169,6 +186,11 @@ impl Lexer {
             "print" => TokenType::Print,
             "true" => TokenType::True,
             "false" => TokenType::False,
+            "gamble" => TokenType::Gamble,
+            "buy" => TokenType::Buy,
+            "sell" => TokenType::Sell,
+            "loan" => TokenType::Loan,
+            "pay" => TokenType::Pay,
             _ => TokenType::Identifier,
         };
 
@@ -255,6 +277,10 @@ impl Lexer {
 
     fn is_alpha(&self) -> bool {
         self.peek().is_alphabetic()
+    }
+
+    fn is_identifier(&self) -> bool {
+        self.peek().is_alphabetic() || self.peek() == '_'
     }
 
     fn error(&self, message: &str) -> ! {

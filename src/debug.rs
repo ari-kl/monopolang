@@ -41,6 +41,32 @@ pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
             println!("{}Then:", " ".repeat(indent + 1));
             traverse_print_stmt(then_branch, indent + 2);
         }
+        ast::Statement::Gamble(expr) => {
+            println!("{}Gamble:", " ".repeat(indent));
+            traverse_print_expr(expr, indent + 1);
+        }
+        ast::Statement::Buy(stock, amount) => {
+            println!("{}Buy:", " ".repeat(indent));
+            println!("{}Stock:", " ".repeat(indent + 1));
+            traverse_print_expr(stock, indent + 2);
+            println!("{}Amount:", " ".repeat(indent + 1));
+            traverse_print_expr(amount, indent + 2);
+        }
+        ast::Statement::Sell(stock, amount) => {
+            println!("{}Sell:", " ".repeat(indent));
+            println!("{}Stock:", " ".repeat(indent + 1));
+            traverse_print_expr(stock, indent + 2);
+            println!("{}Amount:", " ".repeat(indent + 1));
+            traverse_print_expr(amount, indent + 2);
+        }
+        ast::Statement::Loan(amount) => {
+            println!("{}Loan:", " ".repeat(indent));
+            traverse_print_expr(amount, indent + 1);
+        }
+        ast::Statement::Pay(amount) => {
+            println!("{}Pay:", " ".repeat(indent));
+            traverse_print_expr(amount, indent + 1);
+        }
     }
 }
 
@@ -60,6 +86,9 @@ pub fn traverse_print_expr(expr: &ast::Expression, indent: usize) {
         }
         ast::Expression::Variable(name) => {
             println!("{}Variable: {}", " ".repeat(indent), name);
+        }
+        ast::Expression::ReadonlyVariable(name) => {
+            println!("{}ReadonlyVariable: {}", " ".repeat(indent), name);
         }
         ast::Expression::Unary(operator, right) => {
             println!("{}Unary: {:?}", " ".repeat(indent), operator);

@@ -41,6 +41,11 @@ pub enum Statement {
     Print(Expression),
     Block(Vec<Declaration>),
     If(Expression, Box<Statement>),
+    Gamble(Expression),
+    Buy(Expression, Expression),
+    Sell(Expression, Expression),
+    Loan(Expression),
+    Pay(Expression),
 }
 
 #[derive(Debug)]
@@ -50,6 +55,7 @@ pub enum Expression {
     Void,
     String(String),
     Variable(String),
+    ReadonlyVariable(String), // Used internally for economy variables, like @balance
     Unary(UnaryOperator, Box<Expression>),
     Binary(BinaryOperator, Box<Expression>, Box<Expression>),
     Logical(LogicalOperator, Box<Expression>, Box<Expression>),
