@@ -95,7 +95,9 @@ impl Lexer {
     }
 
     fn scan_token(&mut self) {
-        match self.advance() {
+        let c = self.advance();
+
+        match c {
             ' ' | '\r' | '\t' => (),
             '\n' => {
                 self.line += 1;
@@ -140,7 +142,8 @@ impl Lexer {
             '"' => self.string(),
             '0'..='9' => self.number(),
             'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
-            _ => {}
+            '\0' => (),
+            _ => self.error(&format!("Unexpected character: {}", c)),
         }
     }
 
@@ -181,11 +184,7 @@ impl Lexer {
             self.advance();
         }
         if self.is_at_end() {
-            println!(
-                "Unterminated string at line {} and column {}",
-                self.line, self.column
-            );
-            return;
+            self.error("Unterminated string");
         }
         self.advance();
         self.add_token(TokenType::String);
@@ -256,5 +255,9 @@ impl Lexer {
 
     fn is_alpha(&self) -> bool {
         self.peek().is_alphabetic()
+    }
+
+    fn error(&self, message: &str) -> ! {
+        panic!("Error at <{}:{}>: {}", self.line, self.column, message);
     }
 }

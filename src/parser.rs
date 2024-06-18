@@ -213,11 +213,7 @@ impl Parser {
             self.consume(TokenType::RightParen, "Expected ')' after expression");
             expr
         } else {
-            panic!(
-                "Expected expression at {}:{}",
-                self.peek().line,
-                self.peek().column
-            )
+            self.error("Expected expression");
         }
     }
 
@@ -237,7 +233,7 @@ impl Parser {
         if self.check(kind) {
             self.advance()
         } else {
-            panic!("{}", message)
+            self.error(message);
         }
     }
 
@@ -264,5 +260,18 @@ impl Parser {
 
     pub fn is_at_end(&self) -> bool {
         self.tokens[self.current].kind == TokenType::Eof
+    }
+
+    pub fn error(&self, message: &str) -> ! {
+        let token = &self.tokens[self.current];
+
+        if token.kind == TokenType::Eof {
+            panic!("Error at end: {}", message);
+        } else {
+            panic!(
+                "Error at <{}:{}> | '{}': {}",
+                token.line, token.column, token.lexeme, message
+            );
+        }
     }
 }
