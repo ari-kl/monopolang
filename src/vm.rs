@@ -255,10 +255,45 @@ impl VM {
                 }
                 OpCode::ProcedureCall(name) => {
                     // Replace the procedure call with the procedure's code
-                    let procedure = self.procedures.get(name).unwrap();
+                    let mut procedure = self.procedures.get(name).unwrap().clone();
+
+                    // Modify all the jumps in the procedure to be relative to the current IP
+                    for op in procedure.iter_mut() {
+                        match op {
+                            OpCode::Jump(offset) => {
+                                *offset = (*offset as isize + self.ip as isize) as usize;
+                            }
+                            OpCode::JumpIfFalse(offset) => {
+                                *offset = (*offset as isize + self.ip as isize) as usize;
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    // Modify all future jumps (jumps pointing to IPs past the call) in the code to be +(procedure length - 1)
+                    // This is because the procedure call is replaced with the procedure's code and pushes the IP forward
+                    for op in self.code.iter_mut() {
+                        match op {
+                            OpCode::Jump(offset) => {
+                                if *offset > self.ip {
+                                    *offset =
+                                        (*offset as isize + procedure.len() as isize - 1) as usize;
+                                }
+                            }
+                            OpCode::JumpIfFalse(offset) => {
+                                if *offset > self.ip {
+                                    *offset =
+                                        (*offset as isize + procedure.len() as isize - 1) as usize;
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
 
                     self.code
-                        .splice(self.ip + 1..self.ip + 1, procedure.iter().cloned());
+                        .splice(self.ip..self.ip + 1, procedure.iter().cloned());
+
+                    self.ip -= 1;
                 }
                 OpCode::Pop => {
                     self.stack.pop();

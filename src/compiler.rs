@@ -46,6 +46,9 @@ impl Compiler {
 
         compiler.compile();
 
+        println!("Compiled procedure: {}", &name);
+        println!("{:?}", compiler.vm.code);
+
         self.vm.constants = compiler.parent.unwrap().vm.constants.clone();
         self.vm.procedures.insert(name, compiler.vm.code);
     }
@@ -73,38 +76,29 @@ impl Compiler {
                 self.vm.write_op(OpCode::ProcedureCall(name));
             }
             Statement::If(cond, then_branch, else_branch) => {
-                // We use JumpForward<IfFalse> to skip the then branch if the condition is false
-                // All jumps should be relative to the current instruction
-                // Backwards jumps are negative, forwards jumps are positive
                 self.expression(cond);
-                let jump_forward = self.vm.write_op(OpCode::JumpForwardIfFalse(0));
+                let jump_forward = self.vm.write_op(OpCode::JumpIfFalse(0));
                 self.statement(*then_branch);
                 // If there is an else branch, we need to jump over it
                 // Patch jump_forward to jump to the end of the then branch
                 let current_idx = self.vm.code.len();
-                self.vm.code[jump_forward] =
-                    OpCode::JumpForwardIfFalse((current_idx - jump_forward) as isize + 1);
+                self.vm.code[jump_forward] = OpCode::JumpIfFalse(current_idx + 1);
                 // If there is an else branch, we need to jump over it
                 if let Some(else_branch) = else_branch {
-                    let skip_else = self.vm.write_op(OpCode::JumpForward(0));
+                    let skip_else = self.vm.write_op(OpCode::Jump(0));
                     self.statement(*else_branch);
                     let current_idx = self.vm.code.len();
-                    self.vm.code[skip_else] =
-                        OpCode::JumpForward((current_idx - skip_else) as isize);
+                    self.vm.code[skip_else] = OpCode::Jump(current_idx);
                 }
             }
             Statement::While(cond, body) => {
-                // We need to use relative jumps in case the loop is in a procedure
                 let loop_start = self.vm.code.len();
                 self.expression(cond);
-                let jump_forward = self.vm.write_op(OpCode::JumpForwardIfFalse(0));
+                let jump_forward = self.vm.write_op(OpCode::JumpIfFalse(0));
                 self.statement(*body);
-                self.vm.write_op(OpCode::JumpForward(
-                    loop_start as isize - self.vm.code.len() as isize,
-                ));
+                self.vm.write_op(OpCode::Jump(loop_start));
                 let current_idx = self.vm.code.len();
-                self.vm.code[jump_forward] =
-                    OpCode::JumpForwardIfFalse((current_idx - jump_forward) as isize);
+                self.vm.code[jump_forward] = OpCode::JumpIfFalse(current_idx);
             }
             Statement::Range(variable, start, end, step, body) => {
                 // Convert the range to a while loop
@@ -112,13 +106,10 @@ impl Compiler {
                 self.vm.write_op(OpCode::SetGlobal(variable.clone()));
 
                 self.statement(Statement::While(
-                    Expression::Unary(
-                        UnaryOperator::Not,
-                        Box::new(Expression::Binary(
-                            BinaryOperator::Equal,
-                            Box::new(Expression::Variable(variable.clone())),
-                            Box::new(end),
-                        )),
+                    Expression::Binary(
+                        BinaryOperator::Less,
+                        Box::new(Expression::Variable(variable.clone())),
+                        Box::new(end),
                     ),
                     Box::new(Statement::Block(vec![
                         *body.clone(),

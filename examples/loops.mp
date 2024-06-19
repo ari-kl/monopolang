@@ -7,6 +7,7 @@
 
 //print "Done!"
 
-range i from 2 to 10 by 2 do
+range i from 1 to 10 do
     print i
+    print "YES"
 end
