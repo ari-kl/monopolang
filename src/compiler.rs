@@ -53,6 +53,7 @@ impl Compiler {
     fn statement(&mut self, stmt: Statement) {
         match stmt {
             Statement::Print(expr) => {
+                self.op_cost(1);
                 self.expression(expr);
                 self.vm.write_op(OpCode::Print);
             }
@@ -61,6 +62,7 @@ impl Compiler {
                 self.vm.write_op(OpCode::Pop);
             }
             Statement::VariableAssignment(name, expr) => {
+                self.op_cost(2);
                 self.expression(expr);
                 self.vm.write_op(OpCode::SetGlobal(name));
             }
@@ -70,18 +72,26 @@ impl Compiler {
                 }
             }
             Statement::ProcedureCall(name) => {
+                self.op_cost(5);
                 self.vm.write_op(OpCode::ProcedureCall(name));
             }
             Statement::If(cond, then_branch, else_branch) => {
+                self.op_cost(3);
                 self.expression(cond);
                 let jump_forward = self.vm.write_op(OpCode::JumpIfFalse(0));
                 self.statement(*then_branch);
                 // If there is an else branch, we need to jump over it
                 // Patch jump_forward to jump to the end of the then branch
                 let current_idx = self.vm.code.len();
-                self.vm.code[jump_forward] = OpCode::JumpIfFalse(current_idx + 1);
+                self.vm.code[jump_forward] = OpCode::JumpIfFalse(current_idx);
                 // If there is an else branch, we need to jump over it
                 if let Some(else_branch) = else_branch {
+                    // +1 to the jump offset to skip the jump over the else branch
+                    match self.vm.code[jump_forward] {
+                        OpCode::JumpIfFalse(ref mut offset) => *offset += 1,
+                        _ => unreachable!(),
+                    }
+
                     let skip_else = self.vm.write_op(OpCode::Jump(0));
                     self.statement(*else_branch);
                     let current_idx = self.vm.code.len();
@@ -89,6 +99,7 @@ impl Compiler {
                 }
             }
             Statement::While(cond, body) => {
+                self.op_cost(5);
                 let loop_start = self.vm.code.len();
                 self.expression(cond);
                 let jump_forward = self.vm.write_op(OpCode::JumpIfFalse(0));
@@ -99,6 +110,7 @@ impl Compiler {
             }
             Statement::Range(variable, start, end, step, body) => {
                 // Convert the range to a while loop
+                // No op_cost here because it transforms to a while loop
                 self.expression(start);
                 self.vm.write_op(OpCode::SetGlobal(variable.clone()));
 
@@ -126,7 +138,10 @@ impl Compiler {
             Statement::Sell(_, _) => {}
             Statement::Loan(_) => {}
             Statement::Pay(_) => {}
-            Statement::Gamble(_) => {}
+            Statement::Gamble(expr) => {
+                self.expression(expr);
+                self.vm.write_op(OpCode::Gamble);
+            }
         }
     }
 
@@ -192,5 +207,9 @@ impl Compiler {
         } else {
             self.vm.write_constant(value)
         }
+    }
+
+    pub fn op_cost(&mut self, cost: i32) {
+        self.vm.write_op(OpCode::Cost(cost as f64));
     }
 }

@@ -209,6 +209,8 @@ impl Lexer {
     }
 
     fn string(&mut self) {
+        self.start += 1; // Skip the opening quote
+
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -219,8 +221,8 @@ impl Lexer {
         if self.is_at_end() {
             self.error("Unterminated string");
         }
-        self.advance();
         self.add_token(TokenType::String);
+        self.advance(); // Consume the closing quote
     }
 
     fn number(&mut self) {

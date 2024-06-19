@@ -9,6 +9,6 @@ proc factorial do
     end
 end
 
-set n -> 5
+set n -> 7
 call factorial
 print return // this prints 120

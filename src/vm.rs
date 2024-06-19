@@ -28,6 +28,10 @@ pub enum OpCode {
     JumpForward(isize),
     ProcedureCall(String),
     Pop,
+
+    // Economy System
+    Cost(f64),
+    Gamble,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +42,12 @@ pub struct VM {
     pub procedures: HashMap<String, Vec<OpCode>>,
     stack: Vec<Value>,
     ip: usize,
+
+    // Economy System
+    balance: f64,
+    debt: f64,
+    stocks: HashMap<String, f64>,
+    won_last_gamble: bool,
 }
 
 impl VM {
@@ -49,6 +59,10 @@ impl VM {
             procedures: HashMap::new(),
             stack: Vec::new(),
             ip: 0,
+            balance: 100.0,
+            debt: 0.0,
+            stocks: HashMap::new(),
+            won_last_gamble: false,
         }
     }
 
@@ -79,10 +93,10 @@ impl VM {
     pub fn execute(&mut self) {
         while self.ip < self.code.len() {
             // Print the instruction pointer, instruction, and stack
-            println!(
-                "ip: {}, instruction: {:?}, stack: {:?}",
-                self.ip, self.code[self.ip], self.stack
-            );
+            // println!(
+            //     "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
+            //     self.ip, self.code[self.ip], self.balance, self.stack
+            // );
 
             // Print the code
             // for (i, instruction) in self.code.iter().enumerate() {
@@ -103,9 +117,26 @@ impl VM {
                     let value = self.stack.pop().unwrap();
                     println!("{}", value.format());
                 }
-                OpCode::GetGlobal(name) => {
-                    self.stack.push(self.globals.get(name).unwrap().clone());
-                }
+                OpCode::GetGlobal(name) => match name as &str {
+                    "@balance" => {
+                        self.stack.push(Value::Number(self.balance));
+                    }
+                    "@debt" => {
+                        self.stack.push(Value::Number(self.debt));
+                    }
+                    "@won" => {
+                        self.stack.push(Value::Boolean(self.won_last_gamble));
+                    }
+                    _ => {
+                        let value = self.globals.get(name);
+
+                        if let Some(value) = value {
+                            self.stack.push(value.clone());
+                        } else {
+                            panic!("Accessing undefined variable '{}'", name);
+                        }
+                    }
+                },
                 OpCode::SetGlobal(name) => {
                     let value = self.stack.pop().unwrap();
                     self.globals.insert(name.to_string(), value);
@@ -118,8 +149,17 @@ impl VM {
                         self.stack.push(Value::Number(a + b));
                     } else if let (Value::String(a), Value::String(b)) = (&a, &b) {
                         self.stack.push(Value::String(format!("{}{}", a, b)));
+                    } else if let (Value::String(a), Value::Number(b)) = (&a, &b) {
+                        self.stack.push(Value::String(format!("{}{}", a, b)));
+                    } else if let (Value::Number(a), Value::String(b)) = (&a, &b) {
+                        self.stack.push(Value::String(format!("{}{}", a, b)));
                     } else {
-                        panic!("Operands must be two numbers or two strings");
+                        if a.is_truthy() {
+                            self.stack.push(a);
+                        } else {
+                            self.stack.push(b);
+                        }
+                        panic!("Operands must be numbers or strings");
                     }
                 }
                 OpCode::Subtract => {
@@ -297,6 +337,34 @@ impl VM {
                 }
                 OpCode::Pop => {
                     self.stack.pop();
+                }
+                OpCode::Cost(amount) => {
+                    self.balance -= amount;
+
+                    if self.balance <= 0.0 {
+                        panic!("Insufficient funds!");
+                    }
+                }
+                OpCode::Gamble => {
+                    let amount = self.stack.pop().unwrap();
+
+                    if let Value::Number(amount) = amount {
+                        if amount > self.balance {
+                            panic!("Insufficient funds to gamble!");
+                        }
+
+                        let random = rand::random::<f64>();
+
+                        if random < 0.5 {
+                            self.balance += amount;
+                            self.won_last_gamble = true;
+                        } else {
+                            self.balance -= amount;
+                            self.won_last_gamble = false;
+                        }
+                    } else {
+                        panic!("Operand must be a number");
+                    }
                 }
             }
 
