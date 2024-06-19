@@ -1,5 +1,5 @@
-let my_num = 20
-let initial_balance = @balance
+set my_num -> 20
+set initial_balance -> @balance
 
 // Gamble $my_num, balance += $my_num if win, balance -= $my_num if lose
 gamble my_num

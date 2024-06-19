@@ -1,6 +1,3 @@
-use ast::Declaration;
-use parser::Parser;
-
 mod ast;
 mod debug;
 mod lexer;
@@ -22,7 +19,7 @@ fn main() {
     let tokens = lexer.scan_tokens();
 
     // Create a parser
-    let mut parser = Parser::new(tokens);
+    let mut parser = parser::Parser::new(tokens);
     let ast = parser.parse();
 
     for decl in &ast {

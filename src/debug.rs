@@ -8,12 +8,19 @@ pub fn traverse_print_decl(decl: &ast::Declaration, indent: usize) {
     match decl {
         ast::Declaration::Variable(name, initializer) => {
             println!("{}Variable: {}", " ".repeat(indent), name);
-            println!("{}Initializer:", " ".repeat(indent));
+            println!("{}Value:", " ".repeat(indent));
             traverse_print_expr(initializer, indent + 1);
         }
         ast::Declaration::Statement(stmt) => {
             println!("{}Statement:", " ".repeat(indent));
             traverse_print_stmt(stmt, indent + 1);
+        }
+        ast::Declaration::Procedure(name, code) => {
+            println!("{}Procedure: {}", " ".repeat(indent), name);
+            println!("{}Code:", " ".repeat(indent));
+            for decl in code {
+                traverse_print_decl(decl, indent + 1);
+            }
         }
     }
 }
@@ -34,12 +41,19 @@ pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
                 traverse_print_decl(decl, indent + 1);
             }
         }
-        ast::Statement::If(condition, then_branch) => {
+        ast::Statement::If(condition, then_branch, else_branch) => {
             println!("{}If:", " ".repeat(indent));
             println!("{}Condition:", " ".repeat(indent + 1));
             traverse_print_expr(condition, indent + 2);
             println!("{}Then:", " ".repeat(indent + 1));
             traverse_print_stmt(then_branch, indent + 2);
+            if let Some(else_branch) = else_branch {
+                println!("{}Else:", " ".repeat(indent + 1));
+                traverse_print_stmt(else_branch, indent + 2);
+            }
+        }
+        ast::Statement::ProcedureCall(name) => {
+            println!("{}ProcedureCall: {}", " ".repeat(indent), name);
         }
         ast::Statement::Gamble(expr) => {
             println!("{}Gamble:", " ".repeat(indent));

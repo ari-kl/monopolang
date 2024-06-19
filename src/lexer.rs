@@ -40,9 +40,9 @@ pub enum TokenType {
     For,
     In,
     Do,
-    Function,
-    Return,
-    Let,
+    Procedure,
+    Call,
+    Set,
     Print,
 
     // Economy keywords
@@ -54,6 +54,7 @@ pub enum TokenType {
 
     // Special
     At,
+    Arrow,
     Eof,
 }
 
@@ -117,7 +118,13 @@ impl Lexer {
             ']' => self.add_token(TokenType::RightBracket),
             '@' => self.add_token(TokenType::At),
             '+' => self.add_token(TokenType::Plus),
-            '-' => self.add_token(TokenType::Minus),
+            '-' => {
+                if self.match_char('>') {
+                    self.add_token(TokenType::Arrow)
+                } else {
+                    self.add_token(TokenType::Minus)
+                }
+            }
             '*' => self.add_token(TokenType::Star),
             '/' => {
                 if self.match_char('/') {
@@ -180,9 +187,9 @@ impl Lexer {
             "for" => TokenType::For,
             "in" => TokenType::In,
             "do" => TokenType::Do,
-            "function" => TokenType::Function,
-            "return" => TokenType::Return,
-            "let" => TokenType::Let,
+            "proc" => TokenType::Procedure,
+            "call" => TokenType::Call,
+            "set" => TokenType::Set,
             "print" => TokenType::Print,
             "true" => TokenType::True,
             "false" => TokenType::False,

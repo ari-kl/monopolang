@@ -1,7 +1,5 @@
 use crate::{
-    ast::{
-        self, BinaryOperator, Declaration, Expression, LogicalOperator, Statement, UnaryOperator,
-    },
+    ast::{BinaryOperator, Declaration, Expression, LogicalOperator, Statement, UnaryOperator},
     lexer::{Token, TokenType},
 };
 
@@ -26,11 +24,25 @@ impl Parser {
     }
 
     pub fn declaration(&mut self) -> Declaration {
-        if self.match_token(TokenType::Let) {
+        if self.match_token(TokenType::Set) {
             self.variable_declaration()
+        } else if self.match_token(TokenType::Procedure) {
+            self.procedure_declaration()
         } else {
             Declaration::Statement(self.statement())
         }
+    }
+
+    pub fn procedure_declaration(&mut self) -> Declaration {
+        let name = self
+            .consume(TokenType::Identifier, "Expected procedure name")
+            .lexeme;
+
+        self.consume(TokenType::Do, "Expected 'do' after procedure name");
+
+        let code = self.block();
+
+        Declaration::Procedure(name, code)
     }
 
     pub fn variable_declaration(&mut self) -> Declaration {
@@ -42,7 +54,7 @@ impl Parser {
         let name = self
             .consume(TokenType::Identifier, "Expected variable name")
             .lexeme;
-        self.consume(TokenType::Equal, "Expected '=' after variable name");
+        self.consume(TokenType::Arrow, "Expected '->' after variable name");
 
         let initializer = self.expression();
 
@@ -53,6 +65,7 @@ impl Parser {
         match self.peek().kind {
             TokenType::Print => self.print_statement(),
             TokenType::If => self.if_statement(),
+            TokenType::Call => self.procedure_call_statement(),
             TokenType::Gamble => self.gamble_statement(),
             TokenType::Buy => self.buy_statement(),
             TokenType::Sell => self.sell_statement(),
@@ -76,9 +89,25 @@ impl Parser {
 
         self.consume(TokenType::Then, "Expected 'then' after if condition");
 
-        let then_branch = Box::new(Statement::Block(self.block()));
+        let then_branch = Box::new(Statement::Block(self.if_block()));
+        let mut else_branch: Option<Box<Statement>> = None;
 
-        Statement::If(condition, then_branch)
+        // If previous token was an 'else', we have an else branch
+        // Previous token and not current because block consumes the 'else' token
+        if self.previous().kind == TokenType::Else {
+            else_branch = Some(Box::new(Statement::Block(self.block())))
+        }
+
+        Statement::If(condition, then_branch, else_branch)
+    }
+
+    pub fn procedure_call_statement(&mut self) -> Statement {
+        self.advance();
+        let name = self
+            .consume(TokenType::Identifier, "Expected procedure name")
+            .lexeme;
+
+        Statement::ProcedureCall(name)
     }
 
     pub fn gamble_statement(&mut self) -> Statement {
@@ -130,6 +159,22 @@ impl Parser {
         declarations
     }
 
+    pub fn if_block(&mut self) -> Vec<Declaration> {
+        let mut declarations = Vec::new();
+
+        while !self.check(TokenType::End) && !self.check(TokenType::Else) && !self.is_at_end() {
+            declarations.push(self.declaration());
+        }
+
+        if !self.check(TokenType::Else) && !self.check(TokenType::End) {
+            self.error("Expected 'else' or 'end' after if block");
+        }
+
+        self.advance();
+
+        declarations
+    }
+
     pub fn expression(&mut self) -> Expression {
         self.or_expression()
     }
@@ -169,7 +214,7 @@ impl Parser {
     pub fn equality(&mut self) -> Expression {
         let mut expr = self.comparison();
 
-        while self.match_token(TokenType::EqualEqual) || self.match_token(TokenType::BangEqual) {
+        while self.match_token(TokenType::Equal) || self.match_token(TokenType::BangEqual) {
             let operator = self.previous().kind;
             let right = self.comparison();
             expr = Expression::Binary(

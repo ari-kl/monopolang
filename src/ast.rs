@@ -33,6 +33,7 @@ pub enum LogicalOperator {
 pub enum Declaration {
     Variable(String, Expression),
     Statement(Statement),
+    Procedure(String, Vec<Declaration>),
 }
 
 #[derive(Debug)]
@@ -40,7 +41,8 @@ pub enum Statement {
     Expression(Expression),
     Print(Expression),
     Block(Vec<Declaration>),
-    If(Expression, Box<Statement>),
+    If(Expression, Box<Statement>, Option<Box<Statement>>),
+    ProcedureCall(String),
     Gamble(Expression),
     Buy(Expression, Expression),
     Sell(Expression, Expression),
@@ -78,7 +80,7 @@ impl BinaryOperator {
             TokenType::Minus => Self::Subtract,
             TokenType::Star => Self::Multiply,
             TokenType::Slash => Self::Divide,
-            TokenType::EqualEqual => Self::Equal,
+            TokenType::Equal => Self::Equal,
             TokenType::BangEqual => Self::NotEqual,
             TokenType::Greater => Self::Greater,
             TokenType::GreaterEqual => Self::GreaterEqual,
