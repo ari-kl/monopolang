@@ -11,21 +11,23 @@ The Idea:
 * If you run out of money, the program crashes
 
 The Language:
-* The language is a simple imperative language with a few basic operations
-* Lua-like syntax
-* Dynamic scope (I'm lazy)
+* The language is a simple imperative language
+* All variables are globally scoped
+* "Procedures" are used to define reusable code blocks, they have no parameters and use global variables for input/output
+* Economy related operations are each their own native statements in the language
+
+For examples, see the `examples` directory.
 
 The Economy Model:
 * Initial money: $100
 * Costs:
   * print: $1
-  * for loop: $5
+  * range loop: $5
   * while loop: $5
   * if statement: $5
-  * variable declaration: $10
-  * variable assignment: $1
-  * function declaration: $20
-  * function call: $5
+  * variable assignment: $2
+  * procedure declaration: $20
+  * procedure call: $5
 * Financial institutions:
   * Loan: Borrow a certain amount of money, pay it back with interest
   * Stock Market: Buy and sell stocks, make or lose money
@@ -33,9 +35,9 @@ The Economy Model:
   * Taxes: Every X operations, you have to pay Y% of the difference in your balance
   * ???
 
-Progress:
-* [ ] Lexer (String -> Tokens)
-* [ ] Parser (Tokens -> AST)
-* [ ] Compiler (AST -> Bytecode)
-* [ ] Interpreter (Execute Bytecode)
-* [ ] Economy (Costs, Financial Institutions; added at runtime)
+Components:
+* Lexer (String -> Tokens)
+* Parser (Tokens -> AST)
+* Compiler (AST -> Bytecode)
+* Interpreter/VM (Execute Bytecode)
+* Economy (Costs, Financial Institutions; part of the VM)

@@ -31,23 +31,25 @@ pub enum LogicalOperator {
 
 #[derive(Debug)]
 pub enum Declaration {
-    Variable(String, Expression),
     Statement(Statement),
-    Procedure(String, Vec<Declaration>),
+    Procedure(String, Vec<Statement>), // Name, Code
 }
 
 #[derive(Debug)]
 pub enum Statement {
+    VariableAssignment(String, Expression), // Name, Value
     Expression(Expression),
     Print(Expression),
-    Block(Vec<Declaration>),
-    If(Expression, Box<Statement>, Option<Box<Statement>>),
-    ProcedureCall(String),
-    Gamble(Expression),
-    Buy(Expression, Expression),
-    Sell(Expression, Expression),
-    Loan(Expression),
-    Pay(Expression),
+    Block(Vec<Statement>),
+    If(Expression, Box<Statement>, Option<Box<Statement>>), // Condition, Then, Else
+    ProcedureCall(String),                                  // Name
+    Gamble(Expression),                                     // Amount to gamble
+    Buy(Expression, Expression),                            // Stock, Amount
+    Sell(Expression, Expression),                           // Stock, Amount
+    Loan(Expression),                                       // Take out loan for amount
+    Pay(Expression),                                        // Amount to pay back loan
+    While(Expression, Box<Statement>),                      // Condition, Body
+    Range(String, Expression, Expression, Expression, Box<Statement>), // Variable name, Start, End, Step, Body
 }
 
 #[derive(Debug)]
@@ -58,9 +60,9 @@ pub enum Expression {
     String(String),
     Variable(String),
     ReadonlyVariable(String), // Used internally for economy variables, like @balance
-    Unary(UnaryOperator, Box<Expression>),
-    Binary(BinaryOperator, Box<Expression>, Box<Expression>),
-    Logical(LogicalOperator, Box<Expression>, Box<Expression>),
+    Unary(UnaryOperator, Box<Expression>), // Operator, Operand
+    Binary(BinaryOperator, Box<Expression>, Box<Expression>), // Operator, Left, Right
+    Logical(LogicalOperator, Box<Expression>, Box<Expression>), // Operator, Left, Right
 }
 
 impl UnaryOperator {

@@ -24,9 +24,7 @@ impl Parser {
     }
 
     pub fn declaration(&mut self) -> Declaration {
-        if self.match_token(TokenType::Set) {
-            self.variable_declaration()
-        } else if self.match_token(TokenType::Procedure) {
+        if self.match_token(TokenType::Procedure) {
             self.procedure_declaration()
         } else {
             Declaration::Statement(self.statement())
@@ -45,7 +43,26 @@ impl Parser {
         Declaration::Procedure(name, code)
     }
 
-    pub fn variable_declaration(&mut self) -> Declaration {
+    pub fn statement(&mut self) -> Statement {
+        match self.peek().kind {
+            TokenType::Set => self.variable_assignment_statement(),
+            TokenType::Print => self.print_statement(),
+            TokenType::If => self.if_statement(),
+            TokenType::While => self.while_statement(),
+            TokenType::Range => self.range_statement(),
+            TokenType::Call => self.procedure_call_statement(),
+            TokenType::Gamble => self.gamble_statement(),
+            TokenType::Buy => self.buy_statement(),
+            TokenType::Sell => self.sell_statement(),
+            TokenType::Loan => self.loan_statement(),
+            TokenType::Pay => self.pay_statement(),
+            _ => Statement::Expression(self.expression()),
+        }
+    }
+
+    pub fn variable_assignment_statement(&mut self) -> Statement {
+        self.advance();
+
         // If the next token is an at, it's a readonly variable and we should use a specialized error message
         if self.check(TokenType::At) {
             self.error("Cannot declare readonly variable");
@@ -58,21 +75,7 @@ impl Parser {
 
         let initializer = self.expression();
 
-        Declaration::Variable(name, initializer)
-    }
-
-    pub fn statement(&mut self) -> Statement {
-        match self.peek().kind {
-            TokenType::Print => self.print_statement(),
-            TokenType::If => self.if_statement(),
-            TokenType::Call => self.procedure_call_statement(),
-            TokenType::Gamble => self.gamble_statement(),
-            TokenType::Buy => self.buy_statement(),
-            TokenType::Sell => self.sell_statement(),
-            TokenType::Loan => self.loan_statement(),
-            TokenType::Pay => self.pay_statement(),
-            _ => Statement::Expression(self.expression()),
-        }
+        Statement::VariableAssignment(name, initializer)
     }
 
     pub fn print_statement(&mut self) -> Statement {
@@ -99,6 +102,48 @@ impl Parser {
         }
 
         Statement::If(condition, then_branch, else_branch)
+    }
+
+    pub fn while_statement(&mut self) -> Statement {
+        self.advance();
+
+        let condition = self.expression();
+
+        self.consume(TokenType::Do, "Expected 'do' after while condition");
+
+        Statement::While(condition, Box::new(Statement::Block(self.block())))
+    }
+
+    pub fn range_statement(&mut self) -> Statement {
+        self.advance();
+
+        let name = self
+            .consume(TokenType::Identifier, "Expected variable name")
+            .lexeme;
+
+        self.consume(TokenType::From, "Expected 'from' after variable name");
+
+        let start = self.expression();
+
+        self.consume(TokenType::To, "Expected 'to' after range start");
+
+        let end = self.expression();
+
+        let step = if self.match_token(TokenType::By) {
+            self.expression()
+        } else {
+            Expression::Number(1.0)
+        };
+
+        self.consume(TokenType::Do, "Expected 'do' after range");
+
+        Statement::Range(
+            name,
+            start,
+            end,
+            step,
+            Box::new(Statement::Block(self.block())),
+        )
     }
 
     pub fn procedure_call_statement(&mut self) -> Statement {
@@ -147,23 +192,23 @@ impl Parser {
         Statement::Pay(amount)
     }
 
-    pub fn block(&mut self) -> Vec<Declaration> {
-        let mut declarations = Vec::new();
+    pub fn block(&mut self) -> Vec<Statement> {
+        let mut statements = Vec::new();
 
         while !self.check(TokenType::End) && !self.is_at_end() {
-            declarations.push(self.declaration());
+            statements.push(self.statement());
         }
 
         self.consume(TokenType::End, "Expected 'end' after block");
 
-        declarations
+        statements
     }
 
-    pub fn if_block(&mut self) -> Vec<Declaration> {
-        let mut declarations = Vec::new();
+    pub fn if_block(&mut self) -> Vec<Statement> {
+        let mut statements = Vec::new();
 
         while !self.check(TokenType::End) && !self.check(TokenType::Else) && !self.is_at_end() {
-            declarations.push(self.declaration());
+            statements.push(self.statement());
         }
 
         if !self.check(TokenType::Else) && !self.check(TokenType::End) {
@@ -172,7 +217,7 @@ impl Parser {
 
         self.advance();
 
-        declarations
+        statements
     }
 
     pub fn expression(&mut self) -> Expression {

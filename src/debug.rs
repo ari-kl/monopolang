@@ -6,11 +6,6 @@ pub fn traverse_print(decl: &ast::Declaration) {
 
 pub fn traverse_print_decl(decl: &ast::Declaration, indent: usize) {
     match decl {
-        ast::Declaration::Variable(name, initializer) => {
-            println!("{}Variable: {}", " ".repeat(indent), name);
-            println!("{}Value:", " ".repeat(indent));
-            traverse_print_expr(initializer, indent + 1);
-        }
         ast::Declaration::Statement(stmt) => {
             println!("{}Statement:", " ".repeat(indent));
             traverse_print_stmt(stmt, indent + 1);
@@ -18,8 +13,8 @@ pub fn traverse_print_decl(decl: &ast::Declaration, indent: usize) {
         ast::Declaration::Procedure(name, code) => {
             println!("{}Procedure: {}", " ".repeat(indent), name);
             println!("{}Code:", " ".repeat(indent));
-            for decl in code {
-                traverse_print_decl(decl, indent + 1);
+            for stmt in code {
+                traverse_print_stmt(stmt, indent + 1);
             }
         }
     }
@@ -27,6 +22,11 @@ pub fn traverse_print_decl(decl: &ast::Declaration, indent: usize) {
 
 pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
     match stmt {
+        ast::Statement::VariableAssignment(name, initializer) => {
+            println!("{}Variable: {}", " ".repeat(indent), name);
+            println!("{}Value:", " ".repeat(indent));
+            traverse_print_expr(initializer, indent + 1);
+        }
         ast::Statement::Expression(expr) => {
             println!("{}Expression:", " ".repeat(indent));
             traverse_print_expr(expr, indent + 1);
@@ -35,10 +35,10 @@ pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
             println!("{}Print:", " ".repeat(indent));
             traverse_print_expr(expr, indent + 1);
         }
-        ast::Statement::Block(decls) => {
+        ast::Statement::Block(stmts) => {
             println!("{}Block:", " ".repeat(indent));
-            for decl in decls {
-                traverse_print_decl(decl, indent + 1);
+            for stmt in stmts {
+                traverse_print_stmt(stmt, indent + 1);
             }
         }
         ast::Statement::If(condition, then_branch, else_branch) => {
@@ -51,6 +51,24 @@ pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
                 println!("{}Else:", " ".repeat(indent + 1));
                 traverse_print_stmt(else_branch, indent + 2);
             }
+        }
+        ast::Statement::While(condition, body) => {
+            println!("{}While:", " ".repeat(indent));
+            println!("{}Condition:", " ".repeat(indent + 1));
+            traverse_print_expr(condition, indent + 2);
+            println!("{}Body:", " ".repeat(indent + 1));
+            traverse_print_stmt(body, indent + 2);
+        }
+        ast::Statement::Range(name, start, end, step, body) => {
+            println!("{}Range: {}", " ".repeat(indent), name);
+            println!("{}Start:", " ".repeat(indent + 1));
+            traverse_print_expr(start, indent + 2);
+            println!("{}End:", " ".repeat(indent + 1));
+            traverse_print_expr(end, indent + 2);
+            println!("{}Step:", " ".repeat(indent + 1));
+            traverse_print_expr(step, indent + 2);
+            println!("{}Body:", " ".repeat(indent + 1));
+            traverse_print_stmt(body, indent + 2);
         }
         ast::Statement::ProcedureCall(name) => {
             println!("{}ProcedureCall: {}", " ".repeat(indent), name);

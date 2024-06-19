@@ -5,7 +5,7 @@ proc factorial do
         set n -> n - 1
         call factorial
         set return -> n * return
-    end
+    end`
 end
 
 set n -> 5
