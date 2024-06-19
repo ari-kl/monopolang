@@ -1,12 +1,12 @@
 use crate::lexer::TokenType;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum UnaryOperator {
     Negate,
     Not,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum BinaryOperator {
     // Arithmetic
     Add,
@@ -23,19 +23,19 @@ pub enum BinaryOperator {
     LessEqual,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum LogicalOperator {
     And,
     Or,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Declaration {
     Statement(Statement),
     Procedure(String, Vec<Statement>), // Name, Code
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     VariableAssignment(String, Expression), // Name, Value
     Expression(Expression),
@@ -52,7 +52,7 @@ pub enum Statement {
     Range(String, Expression, Expression, Expression, Box<Statement>), // Variable name, Start, End, Step, Body
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Number(f64),
     Boolean(bool),

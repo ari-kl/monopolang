@@ -23,17 +23,19 @@ pub enum OpCode {
     And,
     Or,
     JumpIfFalse(usize),
-    JumpForwardIfFalse(usize),
+    JumpForwardIfFalse(isize),
     Jump(usize),
-    JumpForward(usize),
+    JumpForward(isize),
     ProcedureCall(String),
+    Pop,
 }
 
+#[derive(Debug, Clone)]
 pub struct VM {
-    code: Vec<OpCode>,
-    constants: Vec<Value>,
+    pub code: Vec<OpCode>,
+    pub constants: Vec<Value>,
     globals: HashMap<String, Value>,
-    procedures: HashMap<String, Vec<OpCode>>,
+    pub procedures: HashMap<String, Vec<OpCode>>,
     stack: Vec<Value>,
     ip: usize,
 }
@@ -77,10 +79,10 @@ impl VM {
     pub fn execute(&mut self) {
         while self.ip < self.code.len() {
             // Print the instruction pointer, instruction, and stack
-            // println!(
-            //     "ip: {}, instruction: {:?}, stack: {:?}",
-            //     self.ip, self.code[self.ip], self.stack
-            // );
+            println!(
+                "ip: {}, instruction: {:?}, stack: {:?}",
+                self.ip, self.code[self.ip], self.stack
+            );
 
             // Print the code
             // for (i, instruction) in self.code.iter().enumerate() {
@@ -243,12 +245,12 @@ impl VM {
                     let condition = self.stack.pop().unwrap();
 
                     if !condition.is_truthy() {
-                        self.ip += *offset;
+                        self.ip = (self.ip as isize + *offset) as usize;
                         continue;
                     }
                 }
                 OpCode::JumpForward(offset) => {
-                    self.ip += *offset;
+                    self.ip = (self.ip as isize + *offset) as usize;
                     continue;
                 }
                 OpCode::ProcedureCall(name) => {
@@ -257,6 +259,9 @@ impl VM {
 
                     self.code
                         .splice(self.ip + 1..self.ip + 1, procedure.iter().cloned());
+                }
+                OpCode::Pop => {
+                    self.stack.pop();
                 }
             }
 

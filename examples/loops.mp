@@ -1,10 +1,12 @@
-set count -> 10
+//set count -> 10
 
-while count > 0 do
-    print count
-    set count -> count - 1
-end
+//while count > 0 do
+//    print count
+//    set count -> count - 1
+//end
 
-range i from 10 to 0 by -1 do
+//print "Done!"
+
+range i from 2 to 10 by 2 do
     print i
 end

@@ -49,8 +49,8 @@ pub enum TokenType {
 
     // Economy keywords
     Gamble,
-    Buy,
     Sell,
+    Buy,
     Loan,
     Pay,
 

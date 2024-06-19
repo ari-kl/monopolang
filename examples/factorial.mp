@@ -4,6 +4,7 @@ proc factorial do
     else
         set n -> n - 1
         call factorial
+        set n -> n + 1
         set return -> n * return
     end
 end
