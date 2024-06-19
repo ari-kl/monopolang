@@ -46,9 +46,6 @@ impl Compiler {
 
         compiler.compile();
 
-        println!("Compiled procedure: {}", &name);
-        println!("{:?}", compiler.vm.code);
-
         self.vm.constants = compiler.parent.unwrap().vm.constants.clone();
         self.vm.procedures.insert(name, compiler.vm.code);
     }
