@@ -50,6 +50,7 @@ pub enum Statement {
     Pay(Expression),                                        // Amount to pay back loan
     While(Expression, Box<Statement>),                      // Condition, Body
     Range(String, Expression, Expression, Expression, Box<Statement>), // Variable name, Start, End, Step, Body
+    Work,
 }
 
 #[derive(Debug, Clone)]

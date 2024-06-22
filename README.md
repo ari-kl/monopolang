@@ -33,6 +33,7 @@ The Economy Model:
   * Stock Market: Buy and sell stocks, make or lose money
   * Gambling: Bet a certain amount of money, win or lose it
   * Taxes: Every X operations, you have to pay Y% of the difference in your balance
+  * Work: Earn money after every X operations through a statement, working takes time out of the program
   * ???
 
 Components:

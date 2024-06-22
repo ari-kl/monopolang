@@ -32,6 +32,11 @@ pub enum OpCode {
     // Economy System
     Cost(f64),
     Gamble,
+    Loan,
+    Repay,
+    Work,
+    Buy,
+    Sell,
 }
 
 #[derive(Debug, Clone)]
@@ -46,8 +51,13 @@ pub struct VM {
     // Economy System
     balance: f64,
     debt: f64,
-    stocks: HashMap<String, f64>,
+    stock_ownership: HashMap<String, u32>,
+    stock_prices: HashMap<String, f64>,
     won_last_gamble: bool,
+    op_debt_timer: u32,  // Timer for operations, used for forced debt collection
+    op_work_timer: u32,  // Timer for operations, used for forced work
+    op_stock_timer: u32, // Timer for operations, used for forced stock trading
+    can_work: bool,
 }
 
 impl VM {
@@ -59,10 +69,15 @@ impl VM {
             procedures: HashMap::new(),
             stack: Vec::new(),
             ip: 0,
-            balance: 100.0,
+            balance: 250.0,
             debt: 0.0,
-            stocks: HashMap::new(),
+            stock_ownership: HashMap::new(),
+            stock_prices: HashMap::new(),
             won_last_gamble: false,
+            op_debt_timer: 0,
+            op_work_timer: 0,
+            op_stock_timer: 0,
+            can_work: true,
         }
     }
 
@@ -92,6 +107,33 @@ impl VM {
 
     pub fn execute(&mut self) {
         while self.ip < self.code.len() {
+            self.op_debt_timer += 1;
+            self.op_debt_timer %= 20000; // Reset timer every 20000 operations
+
+            if self.op_debt_timer == 0 {
+                // Force collection of 5% of debt
+                let debt_collection = self.debt * 0.05;
+                self.debt -= debt_collection;
+                self.balance -= debt_collection;
+            }
+
+            self.op_work_timer += 1;
+            self.op_work_timer %= 225; // Allow work every 225 operations
+
+            if self.op_work_timer == 0 {
+                self.can_work = true;
+            }
+
+            self.op_stock_timer += 1;
+            self.op_stock_timer %= 1000; // Update stock prices every 1000 operations
+
+            if self.op_stock_timer == 0 {
+                for (_, price) in self.stock_prices.iter_mut() {
+                    let change = rand::random::<f64>() * 0.1 - 0.05;
+                    *price += change;
+                }
+            }
+
             // Print the instruction pointer, instruction, and stack
             // println!(
             //     "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
@@ -126,6 +168,9 @@ impl VM {
                     }
                     "@won" => {
                         self.stack.push(Value::Boolean(self.won_last_gamble));
+                    }
+                    "@can_work" => {
+                        self.stack.push(Value::Boolean(self.can_work));
                     }
                     _ => {
                         let value = self.globals.get(name);
@@ -340,10 +385,6 @@ impl VM {
                 }
                 OpCode::Cost(amount) => {
                     self.balance -= amount;
-
-                    if self.balance <= 0.0 {
-                        panic!("Insufficient funds!");
-                    }
                 }
                 OpCode::Gamble => {
                     let amount = self.stack.pop().unwrap();
@@ -366,6 +407,109 @@ impl VM {
                         panic!("Operand must be a number");
                     }
                 }
+                OpCode::Loan => {
+                    let amount = self.stack.pop().unwrap();
+
+                    // A loan can only be taken out for up to (balance - debt) * 5
+                    // This is to prevent users from taking out absurd loans
+
+                    let max_loan = (self.balance - self.debt) * 5.0;
+
+                    if let Value::Number(amount) = amount {
+                        if amount > max_loan {
+                            panic!("Loan amount exceeds maximum loan amount");
+                        }
+
+                        self.debt += amount;
+                        self.balance += amount;
+                    } else {
+                        panic!("Operand must be a number");
+                    }
+                }
+                OpCode::Repay => {
+                    let amount = self.stack.pop().unwrap();
+
+                    if let Value::Number(amount) = amount {
+                        if amount > self.balance {
+                            panic!("Insufficient funds to repay loan!");
+                        }
+
+                        if amount > self.debt {
+                            panic!("Repayment amount exceeds debt");
+                        }
+
+                        self.debt -= amount;
+                        self.balance -= amount;
+                    } else {
+                        panic!("Operand must be a number");
+                    }
+                }
+                OpCode::Work => {
+                    if self.can_work {
+                        self.balance += (self.balance * 0.001).max(100.0); // 0.1% of balance or 100, whichever is greater
+                        self.can_work = false;
+
+                        // Sleep for 300ms to simulate work
+                        std::thread::sleep(std::time::Duration::from_millis(300));
+                    } else {
+                        panic!("You are on a work cooldown!");
+                    }
+                }
+                OpCode::Buy => {
+                    let name = self.stack.pop().unwrap();
+                    let amount = self.stack.pop().unwrap();
+
+                    if let (Value::String(name), Value::Number(amount)) = (name, amount) {
+                        // If the stock doesn't exist, create it with a random price
+                        if !self.stock_prices.contains_key(&name) {
+                            self.stock_prices
+                                .insert(name.clone(), rand::random::<f64>() * 100.0);
+                        }
+
+                        let price = self.stock_prices.get(&name).unwrap();
+
+                        if amount * price > self.balance {
+                            panic!("Insufficient funds to buy stock!");
+                        }
+
+                        self.balance -= amount * price;
+                        self.stock_ownership
+                            .entry(name.clone())
+                            .and_modify(|owned| *owned += amount as u32)
+                            .or_insert(amount as u32);
+                    }
+                }
+                OpCode::Sell => {
+                    let name = self.stack.pop().unwrap();
+                    let amount = self.stack.pop().unwrap();
+
+                    if let (Value::String(name), Value::Number(amount)) = (name, amount) {
+                        if !self.stock_prices.contains_key(&name) {
+                            panic!("Stock does not exist!");
+                        }
+
+                        let price = self.stock_prices.get(&name).unwrap();
+
+                        if !self.stock_ownership.contains_key(&name) {
+                            panic!("You do not own any of this stock!");
+                        }
+
+                        let owned = self.stock_ownership.get(&name).unwrap();
+
+                        if amount > *owned as f64 {
+                            panic!("You do not own enough of this stock!");
+                        }
+
+                        self.balance += amount * price;
+                        self.stock_ownership
+                            .entry(name.clone())
+                            .and_modify(|owned| *owned -= amount as u32);
+                    }
+                }
+            }
+
+            if self.balance <= 0.0 {
+                panic!("Insufficient funds!");
             }
 
             self.ip += 1;

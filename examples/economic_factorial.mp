@@ -2,6 +2,10 @@ proc factorial do
     if n = 0 then
         set return -> 1
     else
+        if @can_work then
+            work
+        end
+
         set n -> n - 1
         call factorial
         set n -> n + 1
@@ -9,6 +13,8 @@ proc factorial do
     end
 end
 
-set n -> 11
+loan @balance * 5
+
+set n -> 20
 call factorial
 print return // this prints 120

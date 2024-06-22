@@ -99,6 +99,9 @@ pub fn traverse_print_stmt(stmt: &ast::Statement, indent: usize) {
             println!("{}Pay:", " ".repeat(indent));
             traverse_print_expr(amount, indent + 1);
         }
+        ast::Statement::Work => {
+            println!("{}Work", " ".repeat(indent));
+        }
     }
 }
 

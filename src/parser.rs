@@ -55,7 +55,8 @@ impl Parser {
             TokenType::Buy => self.buy_statement(),
             TokenType::Sell => self.sell_statement(),
             TokenType::Loan => self.loan_statement(),
-            TokenType::Pay => self.pay_statement(),
+            TokenType::Repay => self.pay_statement(),
+            TokenType::Work => self.work_statement(),
             _ => Statement::Expression(self.expression()),
         }
     }
@@ -190,6 +191,12 @@ impl Parser {
         let amount = self.expression();
 
         Statement::Pay(amount)
+    }
+
+    pub fn work_statement(&mut self) -> Statement {
+        self.advance();
+
+        Statement::Work
     }
 
     pub fn block(&mut self) -> Vec<Statement> {

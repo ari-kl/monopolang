@@ -134,13 +134,26 @@ impl Compiler {
                 ));
             }
             // TODO: Economic statements
-            Statement::Buy(_, _) => {}
+            Statement::Buy(name, amount) => {
+                self.expression(amount);
+                self.expression(name);
+                self.vm.write_op(OpCode::Buy);
+            }
             Statement::Sell(_, _) => {}
-            Statement::Loan(_) => {}
-            Statement::Pay(_) => {}
+            Statement::Loan(expr) => {
+                self.expression(expr);
+                self.vm.write_op(OpCode::Loan);
+            }
+            Statement::Pay(expr) => {
+                self.expression(expr);
+                self.vm.write_op(OpCode::Repay);
+            }
             Statement::Gamble(expr) => {
                 self.expression(expr);
                 self.vm.write_op(OpCode::Gamble);
+            }
+            Statement::Work => {
+                self.vm.write_op(OpCode::Work);
             }
         }
     }

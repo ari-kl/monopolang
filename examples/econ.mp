@@ -4,7 +4,7 @@ set initial_balance -> @balance
 // Gamble $my_num, balance += $my_num if win, balance -= $my_num if lose
 gamble my_num
 
-if @balance > initial_balance then
+if @won then
   print "You won!"
 end
 
@@ -22,3 +22,5 @@ pay 500
 
 // Print current debt, stored in readonly @debt variable
 print "Current debt: " + @debt
+
+work

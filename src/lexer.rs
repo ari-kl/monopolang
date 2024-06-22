@@ -52,7 +52,8 @@ pub enum TokenType {
     Sell,
     Buy,
     Loan,
-    Pay,
+    Repay,
+    Work,
 
     // Special
     At,
@@ -201,7 +202,8 @@ impl Lexer {
             "buy" => TokenType::Buy,
             "sell" => TokenType::Sell,
             "loan" => TokenType::Loan,
-            "pay" => TokenType::Pay,
+            "repay" => TokenType::Repay,
+            "work" => TokenType::Work,
             _ => TokenType::Identifier,
         };
 
