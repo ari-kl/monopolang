@@ -37,6 +37,7 @@ pub enum OpCode {
     Work,
     Buy,
     Sell,
+    GetStockPrice(String),
 }
 
 #[derive(Debug, Clone)]
@@ -105,6 +106,11 @@ impl VM {
         self.constants[index].clone()
     }
 
+    pub fn create_stock(&mut self, name: &String) {
+        self.stock_prices
+            .insert(name.clone(), rand::random::<f64>() * 100.0);
+    }
+
     pub fn execute(&mut self) {
         while self.ip < self.code.len() {
             self.op_debt_timer += 1;
@@ -135,10 +141,10 @@ impl VM {
             }
 
             // Print the instruction pointer, instruction, and stack
-            // println!(
-            //     "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
-            //     self.ip, self.code[self.ip], self.balance, self.stack
-            // );
+            println!(
+                "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
+                self.ip, self.code[self.ip], self.balance, self.stack
+            );
 
             // Print the code
             // for (i, instruction) in self.code.iter().enumerate() {
@@ -462,8 +468,7 @@ impl VM {
                     if let (Value::String(name), Value::Number(amount)) = (name, amount) {
                         // If the stock doesn't exist, create it with a random price
                         if !self.stock_prices.contains_key(&name) {
-                            self.stock_prices
-                                .insert(name.clone(), rand::random::<f64>() * 100.0);
+                            self.create_stock(&name);
                         }
 
                         let price = self.stock_prices.get(&name).unwrap();
@@ -505,6 +510,16 @@ impl VM {
                             .entry(name.clone())
                             .and_modify(|owned| *owned -= amount as u32);
                     }
+                }
+                OpCode::GetStockPrice(name) => {
+                    let name = &name.clone(); // Fixes borrow checker issue
+
+                    if !self.stock_prices.contains_key(name) {
+                        self.create_stock(name);
+                    }
+
+                    let price = self.stock_prices.get(name).unwrap();
+                    self.stack.push(Value::Number(*price));
                 }
             }
 

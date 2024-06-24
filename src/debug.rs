@@ -125,6 +125,9 @@ pub fn traverse_print_expr(expr: &ast::Expression, indent: usize) {
         ast::Expression::ReadonlyVariable(name) => {
             println!("{}ReadonlyVariable: {}", " ".repeat(indent), name);
         }
+        ast::Expression::StockPrice(name) => {
+            println!("{}StockPrice: {}", " ".repeat(indent), name);
+        }
         ast::Expression::Unary(operator, right) => {
             println!("{}Unary: {:?}", " ".repeat(indent), operator);
             traverse_print_expr(right, indent + 1);

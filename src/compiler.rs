@@ -178,6 +178,9 @@ impl Compiler {
             Expression::ReadonlyVariable(name) => {
                 self.vm.write_op(OpCode::GetGlobal(name));
             }
+            Expression::StockPrice(name) => {
+                self.vm.write_op(OpCode::GetStockPrice(name));
+            }
             Expression::Unary(op, expr) => {
                 self.expression(*expr);
                 match op {

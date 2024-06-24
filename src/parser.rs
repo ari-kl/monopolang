@@ -357,6 +357,11 @@ impl Parser {
                 .consume(TokenType::Identifier, "Expected identifier after '@'")
                 .lexeme;
             Expression::ReadonlyVariable("@".to_string() + &name)
+        } else if self.match_token(TokenType::Dollar) {
+            let name = self
+                .consume(TokenType::Identifier, "Expected identifier after '$'")
+                .lexeme;
+            Expression::StockPrice(name)
         } else if self.match_token(TokenType::LeftParen) {
             let expr = self.expression();
             self.consume(TokenType::RightParen, "Expected ')' after expression");

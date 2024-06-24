@@ -57,6 +57,7 @@ pub enum TokenType {
 
     // Special
     At,
+    Dollar,
     Arrow,
     Eof,
 }
@@ -120,6 +121,7 @@ impl Lexer {
             '[' => self.add_token(TokenType::LeftBracket),
             ']' => self.add_token(TokenType::RightBracket),
             '@' => self.add_token(TokenType::At),
+            '$' => self.add_token(TokenType::Dollar),
             '+' => self.add_token(TokenType::Plus),
             '-' => {
                 if self.match_char('>') {

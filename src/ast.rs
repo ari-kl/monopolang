@@ -61,6 +61,7 @@ pub enum Expression {
     String(String),
     Variable(String),
     ReadonlyVariable(String), // Used internally for economy variables, like @balance
+    StockPrice(String),       // Used to access stock prices from inside the program
     Unary(UnaryOperator, Box<Expression>), // Operator, Operand
     Binary(BinaryOperator, Box<Expression>, Box<Expression>), // Operator, Left, Right
     Logical(LogicalOperator, Box<Expression>, Box<Expression>), // Operator, Left, Right
