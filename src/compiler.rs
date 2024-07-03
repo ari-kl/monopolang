@@ -139,7 +139,11 @@ impl Compiler {
                 self.expression(name);
                 self.vm.write_op(OpCode::Buy);
             }
-            Statement::Sell(_, _) => {}
+            Statement::Sell(name, amount) => {
+                self.expression(amount);
+                self.expression(name);
+                self.vm.write_op(OpCode::Sell);
+            }
             Statement::Loan(expr) => {
                 self.expression(expr);
                 self.vm.write_op(OpCode::Loan);
