@@ -141,10 +141,10 @@ impl VM {
             }
 
             // Print the instruction pointer, instruction, and stack
-            println!(
-                "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
-                self.ip, self.code[self.ip], self.balance, self.stack
-            );
+            // println!(
+            //     "ip: {}, instruction: {:?}, balance: {:?}, stack: {:?}",
+            //     self.ip, self.code[self.ip], self.balance, self.stack
+            // );
 
             // Print the code
             // for (i, instruction) in self.code.iter().enumerate() {
